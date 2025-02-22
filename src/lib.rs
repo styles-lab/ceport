@@ -1,6 +1,8 @@
-//! An event(error,warning) report system for compile toolchain,
-//! is orignally developed for [`parserc`].
-//!
-//! [`parserc`]: https://docs.rs/parserc/latest/parserc
+//! Beautiful diagnostic reporting for compilation/decoding/deserialzation apps.
 
 #![cfg_attr(docsrs, feature(doc_cfg))]
+
+mod diagnostic;
+pub use diagnostic::*;
+
+pub mod renderer;
