@@ -6,6 +6,12 @@ use crate::renderer::term::TerminalRenderer;
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone, Copy, Hash)]
 pub struct FileId(pub usize);
 
+impl From<usize> for FileId {
+    fn from(value: usize) -> Self {
+        Self(value)
+    }
+}
+
 /// Reporting level.
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone, Copy, Hash)]
 pub enum Level {
@@ -23,21 +29,21 @@ impl Default for Level {
 /// The compilation stage.
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone, Copy, Hash)]
 pub enum Stage {
-    Parsing,
-    Semantic,
-    CodeGen,
-    Custom(&'static str),
+    None,
+    Parsing(&'static str),
+    Semantic(&'static str),
+    CodeGen(&'static str),
+    Custom {
+        /// custom stage name,
+        stage: &'static str,
+        /// diagnostic target name.
+        target: &'static str,
+    },
 }
 
 impl Default for Stage {
     fn default() -> Self {
-        Self::Parsing
-    }
-}
-
-impl From<&'static str> for Stage {
-    fn from(value: &'static str) -> Self {
-        Stage::Custom(value)
+        Self::None
     }
 }
 
@@ -124,8 +130,6 @@ impl Label {
 /// A `Diagnostic` reporting for source file.
 #[derive(Default)]
 pub struct Diagnostic {
-    pub stage: Stage,
-    pub level: Level,
     pub code: usize,
     pub message: String,
     pub labels: Vec<Label>,
@@ -133,47 +137,12 @@ pub struct Diagnostic {
 }
 
 impl Diagnostic {
-    /// Create a diagnostic with `bug` level.
-    pub fn bug<S, C, M>(stage: S, code: C, message: M) -> Self
+    pub fn new<C, S>(code: C, message: S) -> Self
     where
-        Stage: From<S>,
         usize: From<C>,
-        String: From<M>,
+        String: From<S>,
     {
-        Diagnostic {
-            stage: stage.into(),
-            level: Level::Bug,
-            code: code.into(),
-            message: message.into(),
-            ..Default::default()
-        }
-    }
-    /// Create a diagnostic with `error` level.
-    pub fn error<S, C, M>(stage: S, code: C, message: M) -> Self
-    where
-        Stage: From<S>,
-        usize: From<C>,
-        String: From<M>,
-    {
-        Diagnostic {
-            stage: stage.into(),
-            level: Level::Error,
-            code: code.into(),
-            message: message.into(),
-            ..Default::default()
-        }
-    }
-
-    /// Create a diagnostic with `warn` level.
-    pub fn warn<S, C, M>(stage: S, code: C, message: M) -> Self
-    where
-        Stage: From<S>,
-        usize: From<C>,
-        String: From<M>,
-    {
-        Diagnostic {
-            stage: stage.into(),
-            level: Level::Warn,
+        Self {
             code: code.into(),
             message: message.into(),
             ..Default::default()
@@ -201,14 +170,10 @@ impl Diagnostic {
 
 /// Diagnostic reporting renderer.
 pub trait Renderer: Sync + Send {
-    /// Determines if a diagnostic with the specified `level` would be logged.
-    fn level_enabled(&self, level: Level) -> bool;
-
-    /// Determines if a diagnostic with the specified `stage` would be logged.
-    fn stage_enabled(&self, level: Level) -> bool;
-
+    /// Determines if a diagnostic with specified `stage` and `level` would be logged.
+    fn enabled(&self, stage: Stage, level: Level) -> bool;
     /// logs the `Diagnostic`
-    fn log(&self, diagnostic: Diagnostic);
+    fn render(&self, stage: Stage, level: Level, diagnostic: Diagnostic);
 }
 
 static TERM_RENDERER: &'static dyn Renderer = &TerminalRenderer;
@@ -231,4 +196,65 @@ where
 /// you can replace it with your own [`Renderer`] by calling the [`set_renderer`] function.
 pub fn get_renderer() -> &'static dyn Renderer {
     RENDERER.get().map(|v| v.as_ref()).unwrap_or(TERM_RENDERER)
+}
+
+/// logs a diagnostic reporting.
+pub fn diagnostic<S, L, B>(stage: S, level: L, builder: B)
+where
+    Stage: From<S>,
+    Level: From<L>,
+    B: FnOnce() -> Diagnostic,
+{
+    let renderer = get_renderer();
+
+    let stage = stage.into();
+    let level = level.into();
+    if renderer.enabled(stage, level) {
+        renderer.render(stage, level, builder());
+    }
+}
+
+/// Report a bug.
+pub fn bug<S, B>(stage: S, builder: B)
+where
+    Stage: From<S>,
+    B: FnOnce() -> Diagnostic,
+{
+    diagnostic(stage, Level::Bug, builder);
+}
+
+/// Report a error.
+pub fn error<S, B>(stage: S, builder: B)
+where
+    Stage: From<S>,
+    B: FnOnce() -> Diagnostic,
+{
+    diagnostic(stage, Level::Error, builder);
+}
+
+/// Report a warn.
+pub fn warn<S, B>(stage: S, builder: B)
+where
+    Stage: From<S>,
+    B: FnOnce() -> Diagnostic,
+{
+    diagnostic(stage, Level::Warn, builder);
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    static STAGE: Stage = Stage::Parsing("SVG");
+
+    #[test]
+    fn test_diagnostic() {
+        error(STAGE, || {
+            Diagnostic::new(10usize, "hello world")
+                .with_note("")
+                .with_label(Label::primary(1, 0..100, "hello world"))
+                .with_label(Label::primary(1, 0..100, "hello world"))
+                .with_label(Label::primary(1, 0..100, "hello world"))
+        });
+    }
 }

@@ -2,21 +2,17 @@
 //!
 //! This is the default renderer of **ceport**.
 
-use crate::Renderer;
+use crate::{Level, Renderer, Stage};
 
 pub struct TerminalRenderer;
 
 #[allow(unused)]
 impl Renderer for TerminalRenderer {
-    fn level_enabled(&self, level: crate::Level) -> bool {
+    fn render(&self, stage: Stage, level: Level, diagnostic: crate::Diagnostic) {
         todo!()
     }
 
-    fn stage_enabled(&self, level: crate::Level) -> bool {
-        todo!()
-    }
-
-    fn log(&self, diagnostic: crate::Diagnostic) {
-        todo!()
+    fn enabled(&self, stage: crate::Stage, level: crate::Level) -> bool {
+        false
     }
 }
