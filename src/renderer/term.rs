@@ -6,7 +6,9 @@ use std::io::Write;
 
 use termcolor::{Color, ColorChoice, ColorSpec, StandardStream, WriteColor};
 
-use crate::{Diagnostic, GlobalRenderer, Level, Renderer, Stage};
+use crate::{Diagnostic, Level, Stage};
+
+use super::Renderer;
 
 #[allow(unused)]
 struct ColorRenderer {
@@ -78,13 +80,5 @@ impl Renderer for TerminalRenderer {
         let mut color_renderer = ColorRenderer::new(stage, level, diagnostic);
 
         color_renderer.render();
-    }
-}
-
-#[allow(unused)]
-#[cfg(feature = "global")]
-impl GlobalRenderer for TerminalRenderer {
-    fn enabled(&self, stage: Stage, level: Level) -> bool {
-        true
     }
 }

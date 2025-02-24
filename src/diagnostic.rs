@@ -1,6 +1,6 @@
-use std::{ops::Range, sync::OnceLock, usize};
+use std::{ops::Range, usize};
 
-use crate::{renderer::term::TerminalRenderer, sources::SrcId};
+use crate::sources::SrcId;
 
 /// Optional code for diagnostic reporting.
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone, Copy, Hash)]
@@ -13,11 +13,18 @@ impl From<i32> for Code {
 }
 
 /// Reporting level.
+#[repr(u8)]
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone, Copy, Hash)]
 pub enum Level {
     Bug = 1,
     Error,
     Warn,
+}
+
+impl From<Level> for u8 {
+    fn from(value: Level) -> Self {
+        value as u8
+    }
 }
 
 impl Default for Level {
@@ -174,106 +181,3 @@ impl Diagnostic {
         self
     }
 }
-
-/// Diagnostic reporting renderer.
-pub trait Renderer: Sync + Send {
-    /// logs the `Diagnostic`
-    fn render(&self, stage: Stage, level: Level, diagnostic: Diagnostic);
-}
-
-#[cfg(feature = "global")]
-mod global {
-    use super::*;
-    /// Diagnostic reporting renderer.
-    pub trait GlobalRenderer: Renderer {
-        /// Determines if a diagnostic with specified `stage` and `level` would be logged.
-        fn enabled(&self, stage: Stage, level: Level) -> bool;
-    }
-
-    static TERM_RENDERER: &'static dyn GlobalRenderer = &TerminalRenderer;
-    static RENDERER: OnceLock<Box<dyn GlobalRenderer>> = OnceLock::new();
-
-    /// Set the global [`Renderer`].
-    pub fn set_renderer<R>(renderer: R)
-    where
-        R: GlobalRenderer + 'static,
-    {
-        RENDERER
-            .set(Box::new(renderer))
-            .map_err(|_| ())
-            .expect("call set_renderer twice.");
-    }
-
-    /// Get the global [`Renderer`].
-    ///
-    /// Default returns a global [`TerminalRenderer`] instance,
-    /// you can replace it with your own [`Renderer`] by calling the [`set_renderer`] function.
-    pub fn get_renderer() -> &'static dyn GlobalRenderer {
-        RENDERER.get().map(|v| v.as_ref()).unwrap_or(TERM_RENDERER)
-    }
-
-    /// logs a diagnostic reporting.
-    pub fn diagnostic<S, L, B>(stage: S, level: L, builder: B)
-    where
-        Stage: From<S>,
-        Level: From<L>,
-        B: FnOnce() -> Diagnostic,
-    {
-        let renderer = get_renderer();
-
-        let stage = stage.into();
-        let level = level.into();
-        if renderer.enabled(stage, level) {
-            renderer.render(stage, level, builder());
-        }
-    }
-
-    /// Report a bug.
-    pub fn bug<S, B>(stage: S, builder: B)
-    where
-        Stage: From<S>,
-        B: FnOnce() -> Diagnostic,
-    {
-        diagnostic(stage, Level::Bug, builder);
-    }
-
-    /// Report a error.
-    pub fn error<S, B>(stage: S, builder: B)
-    where
-        Stage: From<S>,
-        B: FnOnce() -> Diagnostic,
-    {
-        diagnostic(stage, Level::Error, builder);
-    }
-
-    /// Report a warn.
-    pub fn warn<S, B>(stage: S, builder: B)
-    where
-        Stage: From<S>,
-        B: FnOnce() -> Diagnostic,
-    {
-        diagnostic(stage, Level::Warn, builder);
-    }
-
-    #[cfg(test)]
-    mod tests {
-        use super::*;
-
-        static STAGE: Stage = Stage::Parsing("SVG");
-
-        #[test]
-        fn test_diagnostic() {
-            error(STAGE, || {
-                Diagnostic::new("hello world")
-                    .with_code(10)
-                    .with_note("")
-                    .with_label(Label::primary(1, 0..100, "hello world"))
-                    .with_label(Label::primary(1, 0..100, "hello world"))
-                    .with_label(Label::primary(1, 0..100, "hello world"))
-            });
-        }
-    }
-}
-
-#[cfg(feature = "global")]
-pub use global::*;
