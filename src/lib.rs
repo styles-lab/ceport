@@ -6,3 +6,4 @@ mod diagnostic;
 pub use diagnostic::*;
 
 pub mod renderer;
+pub mod sources;
