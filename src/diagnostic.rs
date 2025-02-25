@@ -135,7 +135,7 @@ impl Label {
 }
 
 /// A `Diagnostic` reporting for source file.
-#[derive(Default)]
+#[derive(Default, PartialEq, Clone)]
 pub struct Diagnostic {
     pub code: Option<Code>,
     pub message: String,

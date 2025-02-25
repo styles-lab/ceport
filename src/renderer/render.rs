@@ -1,5 +1,13 @@
-use crate::{Level, Stage};
+use crate::{Diagnostic, Level, Stage};
 
+/// Renderer for diagnostic reporting.
 pub trait Renderer {
-    fn render(&self, stage: Stage, level: Level, diagnostic: crate::Diagnostic);
+    type Error;
+
+    fn render(
+        &self,
+        stage: Stage,
+        level: Level,
+        diagnostic: &Diagnostic,
+    ) -> Result<(), Self::Error>;
 }
