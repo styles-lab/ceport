@@ -8,5 +8,5 @@ pub use diagnostic::*;
 #[cfg(feature = "global")]
 pub mod cache;
 
+pub mod files;
 pub mod renderer;
-pub mod sources;

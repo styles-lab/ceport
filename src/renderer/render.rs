@@ -1,4 +1,4 @@
-use crate::{Diagnostic, Level, Stage};
+use crate::{Diagnostic, Level, Stage, files::Files};
 
 /// Renderer for diagnostic reporting.
 pub trait Renderer {
@@ -9,5 +9,6 @@ pub trait Renderer {
         stage: Stage,
         level: Level,
         diagnostic: &Diagnostic,
+        files: &Files,
     ) -> Result<(), Self::Error>;
 }

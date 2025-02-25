@@ -1,6 +1,6 @@
 use std::{ops::Range, usize};
 
-use crate::sources::SrcId;
+use crate::files::SrcId;
 
 /// Optional code for diagnostic reporting.
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone, Copy, Hash)]

@@ -11,7 +11,7 @@ impl From<usize> for SrcId {
 }
 
 /// Source code used by [`Renderer`]
-pub trait Src {
+pub trait File {
     /// Return source file name.
     fn name(&self) -> &str;
 
@@ -28,7 +28,7 @@ pub struct ContentWithName {
     content: Cow<'static, str>,
 }
 
-impl Src for ContentWithName {
+impl File for ContentWithName {
     fn name(&self) -> &str {
         &self.name
     }
@@ -55,15 +55,15 @@ where
 
 /// A collection of source codes.
 #[derive(Default)]
-pub struct Sources {
-    srcs: Vec<Box<dyn Src>>,
+pub struct Files {
+    srcs: Vec<Box<dyn File>>,
 }
 
-impl Sources {
+impl Files {
     /// Add a new sources.
     pub fn add<S>(&mut self, src: S) -> SrcId
     where
-        S: Src + 'static,
+        S: File + 'static,
     {
         let id = SrcId(self.srcs.len());
 
@@ -75,7 +75,7 @@ impl Sources {
     /// Get the source by id.
     ///
     /// If the source is not eixsts, returns `None`.
-    pub fn get(&self, id: SrcId) -> Option<&dyn Src> {
+    pub fn get(&self, id: SrcId) -> Option<&dyn File> {
         self.srcs.get(id.0).map(|v| v.as_ref())
     }
 }

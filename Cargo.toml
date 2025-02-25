@@ -13,6 +13,7 @@ serde = {version = "^1.0", features = ["derive"]}
 termcolor = {version = "^1.4"}
 thiserror = {version = "^2.0"}
 unicode-width = {version = "^0.2"}
+unindent = {version = "^0.2"}
 [dev-dependencies]
 divan = {version = "^0.1"}
 pretty_env_logger = {version = "^0.5"}
