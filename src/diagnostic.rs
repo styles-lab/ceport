@@ -25,7 +25,7 @@ pub enum Level {
     Help,
 }
 /// Region of one label.
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct LabelRegion<'a> {
     /// The region of code associated with a diagnostic.
     pub range: Range<usize>,
@@ -34,7 +34,7 @@ pub struct LabelRegion<'a> {
 }
 
 /// A label describing an underlined region of code associated with a diagnostic.
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Label<'a> {
     /// The file that associated with diagnostic reporting.
     pub id: FileId,
@@ -78,7 +78,7 @@ impl<'a> Label<'a> {
 }
 
 /// A diagnostic reporting instance.
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Diagnostic<'a> {
     /// Severity of this diagnostic reporting.
     pub level: Level,
@@ -154,8 +154,11 @@ impl<'a> Diagnostic<'a> {
     }
 
     /// Add some labels to the diagnostic.
-    pub fn with_label(mut self, label: Label<'a>) -> Self {
-        self.labels.push(label);
+    pub fn with_label<L>(mut self, label: L) -> Self
+    where
+        Label<'a>: From<L>,
+    {
+        self.labels.push(label.into());
         self
     }
 }

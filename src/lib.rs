@@ -2,4 +2,8 @@
 
 #![cfg_attr(docsrs, feature(doc_cfg))]
 
-pub mod diagnostic;
+mod diagnostic;
+pub use diagnostic::*;
+
+mod render;
+pub use render::*;
