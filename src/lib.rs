@@ -1,12 +1,3 @@
-//! Beautiful diagnostic reporting for compilation/decoding/deserialzation apps.
+//! Beautiful diagnostic reporting for app errors/warns.
 
 #![cfg_attr(docsrs, feature(doc_cfg))]
-
-mod diagnostic;
-pub use diagnostic::*;
-
-#[cfg(feature = "global")]
-pub mod cache;
-
-pub mod files;
-pub mod renderer;
