@@ -144,6 +144,12 @@ impl<'a> Diagnostic<'a> {
         Self::new(Level::Help, message)
     }
 
+    /// Set optional code.
+    pub fn with_code(mut self, code: usize) -> Self {
+        self.code = Some(code);
+        self
+    }
+
     /// Add some notes to the diagnostic.
     pub fn with_note<M>(mut self, message: M) -> Self
     where
